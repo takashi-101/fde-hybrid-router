@@ -213,5 +213,13 @@ tests/          ユニットテスト
 ```
 見本データ（氏名・電話番号・個人番号）はすべて架空です。
 
+## 根拠（学習）
+
+| 機能 | 裏付けになる学習（発行元・名称・発行日） | 照会先（Credly） |
+|---|---|---|
+| ローカルLLM（Ollama）の呼び出しと、接続先の許可リスト | Coursera（認定：IBM）「Building Generative AI-Powered Applications with Python」2026年11月9日 | https://www.credly.com/badges/21c09ff8-a1eb-4262-9cb4-447cc8f472cf |
+| 機密区分による振り分けとマスキング、プロンプトインジェクションの遮断 | Coursera（認定：IBM）「Generative AI for Cybersecurity Professionals Specialization」2026年11月11日 | https://www.credly.com/badges/7d044f37-5952-49e2-9163-4ec3e061fcc1 |
+| 確信度が低い案件を人の確認に回す（Human-in-the-Loop） | Coursera（認定：IBM）「Agentic AI with LangChain and LangGraph」2026年11月2日 | https://www.credly.com/badges/bc08f1a5-df4d-4111-899f-46d43ebdd1ad |
+
 ## ライセンス
 MIT
