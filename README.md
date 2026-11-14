@@ -1,7 +1,5 @@
 # fde-hybrid-router：機密区分で問い合わせをクラウド側とローカルLLMに振り分けるルーター
 
-[![tests](https://github.com/takashi-101/fde-hybrid-router/actions/workflows/tests.yml/badge.svg)](https://github.com/takashi-101/fde-hybrid-router/actions/workflows/tests.yml)
-
 問い合わせの本文を、個人情報の有無とプロンプトインジェクション（LLMへの指示の上書きを狙う入力）の兆候で判定し、公開情報はクラウド側へ、個人情報・内部情報はマスキング（伏せ字に置き換えること）してローカルLLMへ、兆候のある入力は人の確認へ振り分けます。結果はSQLite（ファイル1つで動くデータベース）に記録します。標準ライブラリだけで動きます。
 
 ## 30秒で読む要点
@@ -171,7 +169,7 @@ python run_demo.py --ollama-url http://127.0.0.1:9
     },
 …（省略）
 ```
-答えたのが見本（`sample_local`）であることと、その理由が記録されます。CI（GitHubでの自動テスト）でも同じ経路で動きます。
+答えたのが見本（`sample_local`）であることと、その理由が記録されます。Ollama の無い環境でも同じ経路で動きます。
 
 ## クラウド側の差し替え方
 `(区分, マスキング後の本文) -> ModelPrediction` の形の関数なら、何でも差し込めます。
@@ -215,11 +213,13 @@ tests/          ユニットテスト
 
 ## 根拠（学習）
 
-| 機能 | 裏付けになる学習（発行元・名称・発行日） | 照会先（Credly） |
-|---|---|---|
-| ローカルLLM（Ollama）の呼び出しと、接続先の許可リスト | Coursera（認定：IBM）「Building Generative AI-Powered Applications with Python」2026年11月9日 | https://www.credly.com/badges/21c09ff8-a1eb-4262-9cb4-447cc8f472cf |
-| 機密区分による振り分けとマスキング、プロンプトインジェクションの遮断 | Coursera（認定：IBM）「Generative AI for Cybersecurity Professionals Specialization」2026年11月11日 | https://www.credly.com/badges/7d044f37-5952-49e2-9163-4ec3e061fcc1 |
-| 確信度が低い案件を人の確認に回す（Human-in-the-Loop） | Coursera（認定：IBM）「Agentic AI with LangChain and LangGraph」2026年11月2日 | https://www.credly.com/badges/bc08f1a5-df4d-4111-899f-46d43ebdd1ad |
+| 求められる力 | 機能 | 裏付けになる学習（発行元・名称・発行日） | 照会先（Credly） |
+|---|---|---|---|
+| 生成AI・LLMの実装（RAG・エージェント・MCP） | ローカルLLM（Ollama）の呼び出しと、接続先の許可リスト | Coursera（認定：IBM）「Building Generative AI-Powered Applications with Python」2026年11月9日 | https://www.credly.com/badges/21c09ff8-a1eb-4262-9cb4-447cc8f472cf |
+| セキュリティ・ガバナンス | 機密区分による振り分けとマスキング、プロンプトインジェクションの遮断 | Coursera（認定：IBM）「Generative AI for Cybersecurity Professionals Specialization」2026年11月11日 | https://www.credly.com/badges/7d044f37-5952-49e2-9163-4ec3e061fcc1 |
+| 生成AI・LLMの実装（RAG・エージェント・MCP） | 確信度が低い案件を人の確認に回す（Human-in-the-Loop） | Coursera（認定：IBM）「Agentic AI with LangChain and LangGraph」2026年11月2日 | https://www.credly.com/badges/bc08f1a5-df4d-4111-899f-46d43ebdd1ad |
+
+「求められる力」の分け方は、[プロフィール](https://github.com/takashi-101) の「FDE・AXで求められる力と、その根拠」と同じです。
 
 ## ライセンス
 MIT
