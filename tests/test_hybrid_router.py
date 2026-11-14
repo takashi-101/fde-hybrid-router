@@ -60,20 +60,20 @@ class TestHybridFDERouter(unittest.TestCase):
             return ModelPrediction("ローカル一次回答", confidence=0.88)
 
         self.repo.insert_inquiry(
-            InquiryRecord("T-2", "手続き", "氏名：山田 太郎 / 電話：090-1234-5678 / 申請について")
+            InquiryRecord("T-2", "手続き", "氏名：架空 太郎 / 電話：090-0000-0000 / 申請について")
         )
         router = HybridFDERouter(self.repo, cloud_backend=cloud_spy, local_backend=local_spy)
         outcomes = router.process_pending()
 
         self.assertEqual(len(cloud_calls), 0)
         self.assertEqual(len(local_calls), 1)
-        self.assertNotIn("山田 太郎", local_calls[0])
-        self.assertNotIn("090-1234-5678", local_calls[0])
+        self.assertNotIn("架空 太郎", local_calls[0])
+        self.assertNotIn("090-0000-0000", local_calls[0])
         self.assertEqual(outcomes[0].decision.target, RouteTarget.LOCAL_LLM_MASKED)
 
     def test_low_confidence_routes_to_human_review_queue(self) -> None:
         self.repo.insert_inquiry(
-            InquiryRecord("T-3", "相談", "氏名：佐藤 花子 / 個別事情の相談")
+            InquiryRecord("T-3", "相談", "氏名：架空 花子 / 個別事情の相談")
         )
         # The local sample is injected so the result does not depend on whether Ollama is running.
         router = HybridFDERouter(self.repo, confidence_threshold=0.80, local_backend=sample_local_backend)
@@ -110,7 +110,11 @@ class TestHybridFDERouter(unittest.TestCase):
 
     def test_sample_backends_record_who_answered(self) -> None:
         self.repo.insert_inquiry(InquiryRecord("T-5", "案内", "図書館の営業時間（一般公開情報）を教えてください。"))
+<<<<<<< Updated upstream
         self.repo.insert_inquiry(InquiryRecord("T-6", "給付金", "氏名：山田 太郎 / 支給要件の標準手順"))
+=======
+        self.repo.insert_inquiry(InquiryRecord("T-6", "給付金", "氏名：架空 太郎 / 支給要件の標準手順"))
+>>>>>>> Stashed changes
         router = HybridFDERouter(
             self.repo, cloud_backend=sample_cloud_backend, local_backend=sample_local_backend
         )
@@ -122,7 +126,11 @@ class TestHybridFDERouter(unittest.TestCase):
         self.assertEqual(rows["T-6"]["fallback_reason"], "")
 
     def test_reprocessed_ticket_that_auto_drafts_leaves_the_human_queue(self) -> None:
+<<<<<<< Updated upstream
         record = InquiryRecord("T-7", "相談", "氏名：佐藤 花子 / 個別事情の相談")
+=======
+        record = InquiryRecord("T-7", "相談", "氏名：架空 花子 / 個別事情の相談")
+>>>>>>> Stashed changes
         self.repo.insert_inquiry(record)
         HybridFDERouter(
             self.repo, local_backend=lambda c, t: ModelPrediction("", confidence=0.3)
