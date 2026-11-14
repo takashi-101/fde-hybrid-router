@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from hybrid_router import HybridFDERouter, InquiryRecord, InquiryRepository
 from hybrid_router.models import DataClassification, ReviewStatus, RouteTarget
-from hybrid_router.router import ModelPrediction
+from hybrid_router.router import ModelPrediction, sample_cloud_backend, sample_local_backend
 
 
 class TestHybridFDERouter(unittest.TestCase):
@@ -75,7 +75,8 @@ class TestHybridFDERouter(unittest.TestCase):
         self.repo.insert_inquiry(
             InquiryRecord("T-3", "相談", "氏名：佐藤 花子 / 個別事情の相談")
         )
-        router = HybridFDERouter(self.repo, confidence_threshold=0.80)
+        # The local sample is injected so the result does not depend on whether Ollama is running.
+        router = HybridFDERouter(self.repo, confidence_threshold=0.80, local_backend=sample_local_backend)
         outcomes = router.process_pending()
 
         self.assertEqual(outcomes[0].review_status, ReviewStatus.NEEDS_HUMAN_REVIEW)
@@ -106,6 +107,33 @@ class TestHybridFDERouter(unittest.TestCase):
         self.assertEqual(outcomes[0].decision.target, RouteTarget.BLOCKED_HUMAN_ONLY)
         self.assertEqual(outcomes[0].review_status, ReviewStatus.ESCALATED_SECURITY)
         self.assertEqual(len(self.repo.fetch_human_queue()), 1)
+
+    def test_sample_backends_record_who_answered(self) -> None:
+        self.repo.insert_inquiry(InquiryRecord("T-5", "案内", "図書館の営業時間（一般公開情報）を教えてください。"))
+        self.repo.insert_inquiry(InquiryRecord("T-6", "給付金", "氏名：山田 太郎 / 支給要件の標準手順"))
+        router = HybridFDERouter(
+            self.repo, cloud_backend=sample_cloud_backend, local_backend=sample_local_backend
+        )
+        router.process_pending()
+
+        rows = {r["ticket_id"]: r for r in self.repo.fetch_results()}
+        self.assertEqual(rows["T-5"]["answered_by"], "sample_cloud")
+        self.assertEqual(rows["T-6"]["answered_by"], "sample_local")
+        self.assertEqual(rows["T-6"]["fallback_reason"], "")
+
+    def test_reprocessed_ticket_that_auto_drafts_leaves_the_human_queue(self) -> None:
+        record = InquiryRecord("T-7", "相談", "氏名：佐藤 花子 / 個別事情の相談")
+        self.repo.insert_inquiry(record)
+        HybridFDERouter(
+            self.repo, local_backend=lambda c, t: ModelPrediction("", confidence=0.3)
+        ).process_pending()
+        self.assertEqual(len(self.repo.fetch_human_queue()), 1)
+
+        self.repo.insert_inquiry(record)
+        HybridFDERouter(
+            self.repo, local_backend=lambda c, t: ModelPrediction("回答案", confidence=0.9)
+        ).process_pending()
+        self.assertEqual(self.repo.fetch_human_queue(), [])
 
 
 if __name__ == "__main__":

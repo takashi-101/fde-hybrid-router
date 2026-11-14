@@ -49,7 +49,9 @@ class InquiryRepository:
                     confidence REAL NOT NULL,
                     escalation_reason TEXT NOT NULL,
                     sanitized_payload TEXT NOT NULL,
-                    draft_answer TEXT NOT NULL
+                    draft_answer TEXT NOT NULL,
+                    answered_by TEXT NOT NULL DEFAULT '',
+                    fallback_reason TEXT NOT NULL DEFAULT ''
                 );
 
                 CREATE TABLE IF NOT EXISTS human_review_queue (
@@ -61,6 +63,13 @@ class InquiryRepository:
                 );
                 """
             )
+            # Add the new columns to a DB file created by an older version of this schema.
+            existing = {r["name"] for r in conn.execute("PRAGMA table_info(routing_results)")}
+            for column in ("answered_by", "fallback_reason"):
+                if column not in existing:
+                    conn.execute(
+                        f"ALTER TABLE routing_results ADD COLUMN {column} TEXT NOT NULL DEFAULT ''"
+                    )
 
     def insert_inquiry(self, record: InquiryRecord) -> None:
         with self._connect() as conn:
@@ -96,8 +105,9 @@ class InquiryRepository:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO routing_results
-                (ticket_id, data_classification, route_target, review_status, confidence, escalation_reason, sanitized_payload, draft_answer)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (ticket_id, data_classification, route_target, review_status, confidence,
+                 escalation_reason, sanitized_payload, draft_answer, answered_by, fallback_reason)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     outcome.ticket_id,
@@ -108,9 +118,14 @@ class InquiryRepository:
                     outcome.escalation_reason,
                     outcome.sanitized_payload,
                     outcome.draft_answer,
+                    outcome.answered_by,
+                    outcome.fallback_reason,
                 ),
             )
-            if outcome.review_status.value != "AUTO_DRAFTED":
+            if outcome.review_status.value == "AUTO_DRAFTED":
+                # A re-processed ticket that no longer needs review must not stay in the queue.
+                conn.execute("DELETE FROM human_review_queue WHERE ticket_id = ?", (outcome.ticket_id,))
+            else:
                 conn.execute(
                     """
                     INSERT OR REPLACE INTO human_review_queue (ticket_id, review_status, reason, confidence, resolved)
@@ -123,6 +138,15 @@ class InquiryRepository:
                         outcome.confidence,
                     ),
                 )
+
+    def fetch_results(self) -> List[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT ticket_id, data_classification, route_target, review_status, confidence, "
+                "escalation_reason, sanitized_payload, draft_answer, answered_by, fallback_reason "
+                "FROM routing_results ORDER BY ticket_id"
+            ).fetchall()
+        return [dict(r) for r in rows]
 
     def fetch_human_queue(self) -> List[dict]:
         with self._connect() as conn:

@@ -49,3 +49,5 @@ class RoutingOutcome:
     escalation_reason: str
     sanitized_payload: str
     draft_answer: str
+    answered_by: str = ""  # backend that actually produced draft_answer, e.g. "ollama:qwen2.5:7b"
+    fallback_reason: str = ""  # set when the local LLM was unreachable and the sample answered
