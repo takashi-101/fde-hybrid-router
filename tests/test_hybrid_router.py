@@ -110,11 +110,7 @@ class TestHybridFDERouter(unittest.TestCase):
 
     def test_sample_backends_record_who_answered(self) -> None:
         self.repo.insert_inquiry(InquiryRecord("T-5", "案内", "図書館の営業時間（一般公開情報）を教えてください。"))
-<<<<<<< Updated upstream
-        self.repo.insert_inquiry(InquiryRecord("T-6", "給付金", "氏名：山田 太郎 / 支給要件の標準手順"))
-=======
         self.repo.insert_inquiry(InquiryRecord("T-6", "給付金", "氏名：架空 太郎 / 支給要件の標準手順"))
->>>>>>> Stashed changes
         router = HybridFDERouter(
             self.repo, cloud_backend=sample_cloud_backend, local_backend=sample_local_backend
         )
@@ -126,11 +122,7 @@ class TestHybridFDERouter(unittest.TestCase):
         self.assertEqual(rows["T-6"]["fallback_reason"], "")
 
     def test_reprocessed_ticket_that_auto_drafts_leaves_the_human_queue(self) -> None:
-<<<<<<< Updated upstream
-        record = InquiryRecord("T-7", "相談", "氏名：佐藤 花子 / 個別事情の相談")
-=======
         record = InquiryRecord("T-7", "相談", "氏名：架空 花子 / 個別事情の相談")
->>>>>>> Stashed changes
         self.repo.insert_inquiry(record)
         HybridFDERouter(
             self.repo, local_backend=lambda c, t: ModelPrediction("", confidence=0.3)
